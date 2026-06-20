@@ -30,6 +30,30 @@ export function createRule(payload) {
   return http.post('/rules', payload).then((res) => res.data)
 }
 
+export function listRules(params = {}) {
+  return http.get('/rules', { params }).then((res) => res.data)
+}
+
+export function getRule(ruleCode) {
+  return http.get(`/rules/${ruleCode}`).then((res) => res.data)
+}
+
+export function listRuleVersions(ruleCode) {
+  return http.get(`/rules/${ruleCode}/versions`).then((res) => res.data)
+}
+
+export function listRuleExecutions(ruleCode) {
+  return http.get(`/rules/${ruleCode}/executions`).then((res) => res.data)
+}
+
+export function listRuleAudits(ruleCode) {
+  return http.get(`/rules/${ruleCode}/audits`).then((res) => res.data)
+}
+
+export function archiveRule(ruleCode, payload) {
+  return http.post(`/rules/${ruleCode}/archive`, payload).then((res) => res.data)
+}
+
 export function createVersion(ruleCode, payload) {
   return http.post(`/rules/${ruleCode}/versions`, payload).then((res) => res.data)
 }
