@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RuleDefinitionTest {
     @Test
@@ -45,6 +46,19 @@ class RuleDefinitionTest {
         rule.rollback(1);
 
         assertEquals(1, rule.getCurrentVersion());
+        assertNull(rule.getGrayVersion());
+        assertEquals(0, rule.getGrayPercent());
+    }
+
+    @Test
+    void archiveClearsGrayReleaseAndMarksRuleArchived() {
+        RuleDefinition rule = sampleRule();
+        rule.setCurrentVersion(1);
+        rule.publish(2, 30);
+
+        rule.archive();
+
+        assertTrue(rule.isArchived());
         assertNull(rule.getGrayVersion());
         assertEquals(0, rule.getGrayPercent());
     }

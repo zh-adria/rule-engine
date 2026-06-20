@@ -13,6 +13,7 @@ public class RuleDefinition {
     private Integer grayVersion;
     private Integer grayPercent;
     private String regulatoryRef;
+    private boolean archived;
 
     public static RuleDefinition create(String ruleCode, String ruleName, RuleCategory category, String businessLine,
                                         String description, boolean sensitive, String owner, String regulatoryRef) {
@@ -49,6 +50,12 @@ public class RuleDefinition {
         this.grayPercent = 0;
     }
 
+    public void archive() {
+        this.archived = true;
+        this.grayVersion = null;
+        this.grayPercent = 0;
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getRuleCode() { return ruleCode; }
@@ -73,5 +80,7 @@ public class RuleDefinition {
     public void setGrayPercent(Integer grayPercent) { this.grayPercent = grayPercent; }
     public String getRegulatoryRef() { return regulatoryRef; }
     public void setRegulatoryRef(String regulatoryRef) { this.regulatoryRef = regulatoryRef; }
+    public boolean isArchived() { return archived; }
+    public void setArchived(boolean archived) { this.archived = archived; }
 }
 
