@@ -45,5 +45,13 @@ public class RuleAuditLogEntity {
     public void setOperator(String operator) { this.operator = operator; }
     public void setReason(String reason) { this.reason = reason; }
     public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
+
+    public String getRuleCode() { return ruleCode; }
+    public Integer getVersion() { return version; }
+    public String getAction() { return action; }
+    public String getOperator() { return operator; }
+    public String getReason() { return reason; }
+    public String getIpAddress() { return ipAddress; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }
 

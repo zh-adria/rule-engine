@@ -32,6 +32,8 @@ public class RuleDefinitionEntity {
     private String description;
     @Column(nullable = false)
     private boolean sensitive;
+    @Column(nullable = false)
+    private boolean archived;
     @Column(nullable = false, length = 64)
     private String owner;
     @Column(name = "current_version")
@@ -76,6 +78,8 @@ public class RuleDefinitionEntity {
     public void setDescription(String description) { this.description = description; }
     public boolean isSensitive() { return sensitive; }
     public void setSensitive(boolean sensitive) { this.sensitive = sensitive; }
+    public boolean isArchived() { return archived; }
+    public void setArchived(boolean archived) { this.archived = archived; }
     public String getOwner() { return owner; }
     public void setOwner(String owner) { this.owner = owner; }
     public Integer getCurrentVersion() { return currentVersion; }

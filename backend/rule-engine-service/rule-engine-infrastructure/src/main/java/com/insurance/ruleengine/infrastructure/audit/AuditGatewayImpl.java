@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.insurance.ruleengine.domain.gateway.AuditGateway;
 import com.insurance.ruleengine.domain.model.ExecutionRequest;
 import com.insurance.ruleengine.domain.model.ExecutionResult;
+import com.insurance.ruleengine.domain.model.RuleAuditLog;
+import com.insurance.ruleengine.domain.model.RuleExecutionLog;
 import com.insurance.ruleengine.infrastructure.persistence.entity.RuleAuditLogEntity;
 import com.insurance.ruleengine.infrastructure.persistence.entity.RuleExecutionLogEntity;
 import com.insurance.ruleengine.infrastructure.persistence.repository.RuleAuditLogJpaRepository;
 import com.insurance.ruleengine.infrastructure.persistence.repository.RuleExecutionLogJpaRepository;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class AuditGatewayImpl implements AuditGateway {
@@ -53,12 +57,52 @@ public class AuditGatewayImpl implements AuditGateway {
         executionLogRepository.save(entity);
     }
 
+    @Override
+    public List<RuleExecutionLog> listExecutions(String ruleCode) {
+        return executionLogRepository.findTop100ByRuleCodeOrderByCreatedAtDesc(ruleCode).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<RuleAuditLog> listAudits(String ruleCode) {
+        return auditRepository.findTop100ByRuleCodeOrderByCreatedAtDesc(ruleCode).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
     private String toJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             return "{}";
         }
+    }
+
+    private RuleExecutionLog toDomain(RuleExecutionLogEntity entity) {
+        RuleExecutionLog log = new RuleExecutionLog();
+        log.setTraceId(entity.getTraceId());
+        log.setRuleCode(entity.getRuleCode());
+        log.setVersion(entity.getVersion());
+        log.setScenario(entity.getScenario());
+        log.setDecision(entity.getDecision());
+        log.setHitRules(entity.getHitRules());
+        log.setElapsedMs(entity.getElapsedMs());
+        log.setOperator(entity.getOperator());
+        log.setCreatedAt(entity.getCreatedAt());
+        return log;
+    }
+
+    private RuleAuditLog toDomain(RuleAuditLogEntity entity) {
+        RuleAuditLog log = new RuleAuditLog();
+        log.setRuleCode(entity.getRuleCode());
+        log.setVersion(entity.getVersion());
+        log.setAction(entity.getAction());
+        log.setOperator(entity.getOperator());
+        log.setReason(entity.getReason());
+        log.setIpAddress(entity.getIpAddress());
+        log.setCreatedAt(entity.getCreatedAt());
+        return log;
     }
 }
 

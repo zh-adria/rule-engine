@@ -1,21 +1,27 @@
 package com.insurance.ruleengine.app;
 
 import com.insurance.ruleengine.client.api.RuleEngineFacade;
+import com.insurance.ruleengine.client.dto.ArchiveRuleCmd;
 import com.insurance.ruleengine.client.dto.CreateRuleCmd;
 import com.insurance.ruleengine.client.dto.CreateRuleVersionCmd;
 import com.insurance.ruleengine.client.dto.ExecuteRuleCmd;
 import com.insurance.ruleengine.client.dto.PublishRuleCmd;
 import com.insurance.ruleengine.client.dto.RollbackRuleCmd;
+import com.insurance.ruleengine.client.dto.RuleAuditLogDTO;
 import com.insurance.ruleengine.client.dto.RuleDTO;
+import com.insurance.ruleengine.client.dto.RuleExecutionLogDTO;
 import com.insurance.ruleengine.client.dto.RuleExecutionResultDTO;
+import com.insurance.ruleengine.client.dto.RuleVersionDTO;
 import com.insurance.ruleengine.domain.gateway.AuditGateway;
 import com.insurance.ruleengine.domain.gateway.CryptoGateway;
 import com.insurance.ruleengine.domain.gateway.RuleExecutionGateway;
 import com.insurance.ruleengine.domain.gateway.RuleGateway;
 import com.insurance.ruleengine.domain.model.ExecutionRequest;
 import com.insurance.ruleengine.domain.model.ExecutionResult;
+import com.insurance.ruleengine.domain.model.RuleAuditLog;
 import com.insurance.ruleengine.domain.model.RuleCategory;
 import com.insurance.ruleengine.domain.model.RuleDefinition;
+import com.insurance.ruleengine.domain.model.RuleExecutionLog;
 import com.insurance.ruleengine.domain.model.RuleVersion;
 import com.insurance.ruleengine.domain.service.RulePolicy;
 import org.springframework.stereotype.Service;
@@ -24,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -40,6 +47,45 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
         this.executionGateway = executionGateway;
         this.auditGateway = auditGateway;
         this.cryptoGateway = cryptoGateway;
+    }
+
+    @Override
+    public List<RuleDTO> listRules(String category, String businessLine, String status, String keyword) {
+        return ruleGateway.listRules(category, businessLine, status, keyword).stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @Override
+    public RuleDTO getRule(String ruleCode) {
+        return toDTO(mustFindRule(ruleCode));
+    }
+
+    @Override
+    public List<RuleVersionDTO> listVersions(String ruleCode) {
+        rulePolicy.validateRuleCode(ruleCode);
+        mustFindRule(ruleCode);
+        return ruleGateway.listVersions(ruleCode).stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<RuleExecutionLogDTO> listExecutions(String ruleCode) {
+        rulePolicy.validateRuleCode(ruleCode);
+        mustFindRule(ruleCode);
+        return auditGateway.listExecutions(ruleCode).stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<RuleAuditLogDTO> listAudits(String ruleCode) {
+        rulePolicy.validateRuleCode(ruleCode);
+        mustFindRule(ruleCode);
+        return auditGateway.listAudits(ruleCode).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
@@ -61,6 +107,7 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
     @Transactional
     public RuleDTO createVersion(String ruleCode, CreateRuleVersionCmd cmd) {
         RuleDefinition rule = lockRule(ruleCode);
+        ensureActive(rule);
         executionGateway.validateDrl(cmd.getDrlContent());
         String storedDrl = rule.isSensitive() ? cryptoGateway.encrypt(cmd.getDrlContent()) : cmd.getDrlContent();
         int versionNo = ruleGateway.nextVersion(ruleCode);
@@ -77,6 +124,7 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
     public RuleExecutionResultDTO testRule(String ruleCode, ExecuteRuleCmd cmd) {
         rulePolicy.validateFacts(cmd.getFacts());
         RuleDefinition rule = mustFindRule(ruleCode);
+        ensureActive(rule);
         RuleVersion version = ruleGateway.findVersion(ruleCode, cmd.getVersion())
                 .orElseThrow(() -> new IllegalArgumentException("version not found"));
         RuleVersion executable = decryptIfNeeded(rule, version);
@@ -89,6 +137,7 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
     @Transactional
     public RuleDTO publish(String ruleCode, PublishRuleCmd cmd) {
         RuleDefinition rule = mustFindRule(ruleCode);
+        ensureActive(rule);
         RuleVersion version = ruleGateway.findVersion(ruleCode, cmd.getVersion())
                 .orElseThrow(() -> new IllegalArgumentException("version not found"));
         executionGateway.validateDrl(rule.isSensitive() ? cryptoGateway.decrypt(version.getDrlContent()) : version.getDrlContent());
@@ -104,6 +153,7 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
     @Transactional
     public RuleDTO rollback(String ruleCode, RollbackRuleCmd cmd) {
         RuleDefinition rule = mustFindRule(ruleCode);
+        ensureActive(rule);
         ruleGateway.findVersion(ruleCode, cmd.getTargetVersion())
                 .orElseThrow(() -> new IllegalArgumentException("target version not found"));
         rule.rollback(cmd.getTargetVersion());
@@ -113,9 +163,20 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
     }
 
     @Override
+    @Transactional
+    public RuleDTO archive(String ruleCode, ArchiveRuleCmd cmd) {
+        RuleDefinition rule = mustFindRule(ruleCode);
+        rule.archive();
+        RuleDefinition saved = ruleGateway.saveRule(rule);
+        auditGateway.recordOperation(ruleCode, null, "ARCHIVE", cmd.getOperator(), cmd.getReason(), null);
+        return toDTO(saved);
+    }
+
+    @Override
     public RuleExecutionResultDTO execute(ExecuteRuleCmd cmd) {
-        rulePolicy.validateFacts(cmd.getFacts());
         RuleDefinition rule = mustFindRule(cmd.getRuleCode());
+        ensureActive(rule);
+        rulePolicy.validateFacts(cmd.getFacts());
         RuleVersion version = selectVersion(rule, cmd.getVersion(), cmd.getTraceId());
         RuleVersion executable = decryptIfNeeded(rule, version);
         ExecutionRequest request = toRequest(cmd);
@@ -133,6 +194,12 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
         rulePolicy.validateRuleCode(ruleCode);
         return ruleGateway.lockRuleForUpdate(ruleCode)
                 .orElseThrow(() -> new IllegalArgumentException("rule not found: " + ruleCode));
+    }
+
+    private void ensureActive(RuleDefinition rule) {
+        if (rule.isArchived()) {
+            throw new IllegalStateException("rule is archived: " + rule.getRuleCode());
+        }
     }
 
     private RuleVersion selectVersion(RuleDefinition rule, Integer explicitVersion, String traceId) {
@@ -178,11 +245,53 @@ public class RuleEngineFacadeImpl implements RuleEngineFacade {
         dto.setRuleName(rule.getRuleName());
         dto.setCategory(rule.getCategory().name());
         dto.setBusinessLine(rule.getBusinessLine());
+        dto.setDescription(rule.getDescription());
+        dto.setOwner(rule.getOwner());
+        dto.setRegulatoryRef(rule.getRegulatoryRef());
         dto.setCurrentVersion(rule.getCurrentVersion());
         dto.setGrayVersion(rule.getGrayVersion());
         dto.setGrayPercent(rule.getGrayPercent());
         dto.setLatestVersion(rule.getGrayVersion() == null ? rule.getCurrentVersion() : rule.getGrayVersion());
-        dto.setStatus(rule.getGrayVersion() == null ? "PUBLISHED" : "GRAY");
+        dto.setArchived(rule.isArchived());
+        dto.setStatus(rule.isArchived() ? "ARCHIVED" : (rule.getGrayVersion() == null ? "PUBLISHED" : "GRAY"));
+        return dto;
+    }
+
+    private RuleVersionDTO toDTO(RuleVersion version) {
+        RuleVersionDTO dto = new RuleVersionDTO();
+        dto.setRuleCode(version.getRuleCode());
+        dto.setVersion(version.getVersion());
+        dto.setStatus(version.getStatus().name());
+        dto.setChecksum(version.getChecksum());
+        dto.setCreatedBy(version.getCreatedBy());
+        dto.setApprovedBy(version.getApprovedBy());
+        dto.setPublishedAt(version.getPublishedAt());
+        return dto;
+    }
+
+    private RuleExecutionLogDTO toDTO(RuleExecutionLog log) {
+        RuleExecutionLogDTO dto = new RuleExecutionLogDTO();
+        dto.setTraceId(log.getTraceId());
+        dto.setRuleCode(log.getRuleCode());
+        dto.setVersion(log.getVersion());
+        dto.setScenario(log.getScenario());
+        dto.setDecision(log.getDecision());
+        dto.setHitRules(log.getHitRules());
+        dto.setElapsedMs(log.getElapsedMs());
+        dto.setOperator(log.getOperator());
+        dto.setCreatedAt(log.getCreatedAt());
+        return dto;
+    }
+
+    private RuleAuditLogDTO toDTO(RuleAuditLog log) {
+        RuleAuditLogDTO dto = new RuleAuditLogDTO();
+        dto.setRuleCode(log.getRuleCode());
+        dto.setVersion(log.getVersion());
+        dto.setAction(log.getAction());
+        dto.setOperator(log.getOperator());
+        dto.setReason(log.getReason());
+        dto.setIpAddress(log.getIpAddress());
+        dto.setCreatedAt(log.getCreatedAt());
         return dto;
     }
 

@@ -11,6 +11,7 @@ import com.insurance.ruleengine.infrastructure.persistence.repository.RuleDefini
 import com.insurance.ruleengine.infrastructure.persistence.repository.RuleVersionJpaRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -39,6 +40,15 @@ public class RuleGatewayImpl implements RuleGateway {
     }
 
     @Override
+    public List<RuleDefinition> listRules(String category, String businessLine, String status, String keyword) {
+        return ruleRepository.searchRules(blankToNull(category), blankToNull(businessLine),
+                        archivedFilter(status), blankToNull(keyword))
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public RuleDefinition saveRule(RuleDefinition rule) {
         return toDomain(ruleRepository.save(toEntity(rule)));
     }
@@ -64,6 +74,13 @@ public class RuleGatewayImpl implements RuleGateway {
     }
 
     @Override
+    public List<RuleVersion> listVersions(String ruleCode) {
+        return versionRepository.findByRuleCodeOrderByVersionDesc(ruleCode).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public RuleVersion saveVersion(RuleVersion version) {
         return toDomain(versionRepository.save(toEntity(version)));
     }
@@ -77,6 +94,7 @@ public class RuleGatewayImpl implements RuleGateway {
         rule.setBusinessLine(entity.getBusinessLine());
         rule.setDescription(entity.getDescription());
         rule.setSensitive(entity.isSensitive());
+        rule.setArchived(entity.isArchived());
         rule.setOwner(entity.getOwner());
         rule.setCurrentVersion(entity.getCurrentVersion());
         rule.setGrayVersion(entity.getGrayVersion());
@@ -96,6 +114,7 @@ public class RuleGatewayImpl implements RuleGateway {
         entity.setBusinessLine(rule.getBusinessLine());
         entity.setDescription(rule.getDescription());
         entity.setSensitive(rule.isSensitive());
+        entity.setArchived(rule.isArchived());
         entity.setOwner(rule.getOwner());
         entity.setCurrentVersion(rule.getCurrentVersion());
         entity.setGrayVersion(rule.getGrayVersion());
@@ -134,5 +153,22 @@ public class RuleGatewayImpl implements RuleGateway {
         entity.setApprovedBy(version.getApprovedBy());
         entity.setPublishedAt(version.getPublishedAt());
         return entity;
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private Boolean archivedFilter(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        if ("ARCHIVED".equalsIgnoreCase(status)) {
+            return true;
+        }
+        if ("ACTIVE".equalsIgnoreCase(status)) {
+            return false;
+        }
+        return null;
     }
 }

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS rule_definition (
   business_line VARCHAR(64) NOT NULL,
   description VARCHAR(512),
   sensitive TINYINT(1) NOT NULL DEFAULT 0,
+  archived TINYINT(1) NOT NULL DEFAULT 0,
   owner VARCHAR(64) NOT NULL,
   current_version INT,
   gray_version INT,

@@ -61,5 +61,15 @@ public class RuleExecutionLogEntity {
     public void setRequestSnapshot(String requestSnapshot) { this.requestSnapshot = requestSnapshot; }
     public void setResponseSnapshot(String responseSnapshot) { this.responseSnapshot = responseSnapshot; }
     public void setOperator(String operator) { this.operator = operator; }
+
+    public String getTraceId() { return traceId; }
+    public String getRuleCode() { return ruleCode; }
+    public Integer getVersion() { return version; }
+    public String getScenario() { return scenario; }
+    public String getDecision() { return decision; }
+    public String getHitRules() { return hitRules; }
+    public long getElapsedMs() { return elapsedMs; }
+    public String getOperator() { return operator; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }
 
