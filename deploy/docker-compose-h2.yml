@@ -1,0 +1,30 @@
+services:
+  rule-engine-service:
+    build:
+      context: ..
+      dockerfile: backend/rule-engine-service/rule-engine-start/Dockerfile
+    container_name: rule-engine-service-h2
+    environment:
+      SPRING_PROFILES_ACTIVE: h2
+      RULE_ENGINE_AES_KEY: 0123456789abcdef0123456789abcdef
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../data/h2:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/rule-engine/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  rule-engine-ui:
+    build:
+      context: ..
+      dockerfile: frontend/rule-engine-ui/Dockerfile
+    container_name: rule-engine-ui-h2
+    ports:
+      - "5173:80"
+    depends_on:
+      rule-engine-service:
+        condition: service_healthy
+

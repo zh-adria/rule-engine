@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /rule-engine
+
+spring:
+  application:
+    name: rule-engine-service
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/rule_engine?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
+    username: ${MYSQL_USER:rule}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        enabled: ${NACOS_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+rule-engine:
+  encryption-key: ${RULE_ENGINE_AES_KEY}
+  execution:
+    slow-threshold-ms: 10
+    max-fired-rules: ${RULE_ENGINE_MAX_FIRED_RULES:1000}
+    timeout-ms: ${RULE_ENGINE_TIMEOUT_MS:3000}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-seconds: ${JWT_EXPIRATION:86400}
+  security:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    expose-actuator: ${EXPOSE_ACTUATOR:false}
+    expose-h2-console: ${EXPOSE_H2_CONSOLE:false}
+    expose-swagger: ${EXPOSE_SWAGGER:false}
