@@ -1,0 +1,100 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /rule-engine
+
+spring:
+  application:
+    name: rule-engine-service
+  datasource:
+    url: ${MYSQL_URL:ENC(B36CvdDaY28JXxYsG8R2I+AnEQ1etkta8vWec0knNxfVF5S3p9LLU6gDlpTFyEXPStXSOQBCJKQmsL/5o6NEBI6u0ek/LihaAvvtabkbsQ7Cr/0TgiQzKCy3IYfgjy1NZjKvgrOBfiewPOpXX7HemFkwGQwjrQVl+P2hHnVXj1bHDnpI60qkXghOVgOO0hK60FChFsHf84+v29M8NzO3tfTAubtNyNta)}
+    username: ${MYSQL_USER:ENC(1LHxXPcEkqlKu+CAEHfYwwwHnYs34RLE)}
+    password: ${MYSQL_PASSWORD:ENC(XMqk4InL9cw/0if28U3q+pdYQ9k1U1UEn1/i2sDhODs=)}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    table: flyway_rule_engine_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD}
+    algorithm: PBEWithMD5AndDES
+    iv-generator-classname: org.jasypt.iv.NoIvGenerator
+
+springdoc:
+  api-docs:
+    path: /rule-engine/v3/api-docs
+  swagger-ui:
+    path: /rule-engine/swagger-ui.html
+    tags-sorter: alpha
+
+webhook:
+  retry:
+    max-attempts: 3
+    initial-delay-ms: 1000
+    max-delay-ms: 30000
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        enabled: ${NACOS_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 100ms, 200ms, 500ms, 1s
+
+rule-engine:
+  auth:
+    jwt-secret-key: ${SA_TOKEN_JWT_SECRET_KEY}
+    users:
+      - username: ${RULE_ENGINE_ADMIN_USERNAME}
+        password: ${RULE_ENGINE_ADMIN_PASSWORD}
+        display-name: 管理员
+        roles: [ADMIN]
+        permissions: [ADMIN]
+        tenant-code: default
+      - username: ${RULE_ENGINE_TESTER_USERNAME}
+        password: ${RULE_ENGINE_TESTER_PASSWORD}
+        display-name: 核保员
+        roles: [UNDERWRITER]
+        permissions: [RULE_READ, RULE_WRITE, RULE_PUBLISH, RULE_SET_READ, APPROVAL_READ, AUDIT_READ, WEBHOOK_READ]
+        tenant-code: default
+  encryption-key: ${RULE_ENGINE_AES_KEY}
+  approval-flow-url: ${APPROVAL_FLOW_URL:http://localhost:8082/approval}
+  approval-callback-secret-enabled: ${APPROVAL_CALLBACK_SECRET_ENABLED:true}
+  approval-callback-secret: ${APPROVAL_CALLBACK_SECRET:}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    default-limit: ${RATE_LIMIT_DEFAULT:100}
+    window-seconds: ${RATE_LIMIT_WINDOW:60}
+  execution:
+    slow-threshold-ms: 10
+    max-fired-rules: ${RULE_ENGINE_MAX_FIRED_RULES:1000}
+    timeout-ms: ${RULE_ENGINE_TIMEOUT_MS:3000}

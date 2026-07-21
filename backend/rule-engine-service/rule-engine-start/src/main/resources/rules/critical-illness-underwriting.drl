@@ -1,0 +1,59 @@
+package insurance.underwriting
+
+import java.util.Map;
+import com.insurance.ruleengine.domain.model.ExecutionResult;
+import com.insurance.ruleengine.domain.model.DecisionType;
+
+global java.util.List regulatoryNotes;
+
+rule "CI_UW_001 diabetes with complications decline"
+salience 100
+when
+  $facts: Map(this["productCode"] == "CI2026",
+              this["hasDiabetes"] == true,
+              this["hasComplication"] == true)
+  $result: ExecutionResult()
+then
+  $result.setDecision(DecisionType.DECLINE);
+  $result.getHitRules().add("CI_UW_001");
+  $result.getOutputs().put("underwritingConclusion", "糖尿病且存在并发症，重疾险拒保");
+  $result.getOutputs().put("manualReason", "健康告知高风险疾病组合");
+end
+
+rule "CI_UW_002 BMI high manual review"
+salience 80
+when
+  $facts: Map(this["productCode"] == "CI2026",
+              this["bmi"] != null,
+              ((Number)this["bmi"]).doubleValue() >= 32.0)
+  $result: ExecutionResult(decision != DecisionType.DECLINE)
+then
+  $result.setDecision(DecisionType.MANUAL_REVIEW);
+  $result.getHitRules().add("CI_UW_002");
+  $result.getOutputs().put("underwritingConclusion", "BMI超过核保阈值，进入人工核保");
+end
+
+rule "CI_UW_003 hazardous occupation rate up"
+salience 70
+when
+  $facts: Map(this["occupationClass"] != null,
+              ((Number)this["occupationClass"]).intValue() >= 5)
+  $result: ExecutionResult(decision == DecisionType.ACCEPT)
+then
+  $result.setDecision(DecisionType.RATE_UP);
+  $result.getHitRules().add("CI_UW_003");
+  $result.getOutputs().put("extraPremiumRate", 0.25);
+  $result.getOutputs().put("underwritingConclusion", "5-6类职业加费承保");
+end
+
+rule "CI_UW_004 clean disclosure accept"
+salience 10
+when
+  $facts: Map(this["productCode"] == "CI2026")
+  $result: ExecutionResult(hitRules.size == 0)
+then
+  $result.setDecision(DecisionType.ACCEPT);
+  $result.getHitRules().add("CI_UW_004");
+  $result.getOutputs().put("underwritingConclusion", "健康告知无异常，标准体承保");
+end
+

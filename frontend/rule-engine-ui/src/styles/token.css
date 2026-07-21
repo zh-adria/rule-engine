@@ -1,0 +1,145 @@
+/* ============================================================
+ * Design Tokens — 保险规则引擎平台品牌契约
+ * 本文件仅定义 CSS custom properties,不写任何组件样式。
+ * 组件类见 components.css,Element Plus 覆盖见 element-theme.css
+ * ============================================================ */
+
+:root {
+  /* ---------- Brand / Primary (Indigo) ---------- */
+  --color-primary-50:  #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* ---------- Neutral (Slate) ---------- */
+  --color-neutral-50:  #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+
+  /* ---------- Editorial accents ---------- */
+  --color-accent-rose: #e11d48;
+  --color-accent-amber: #d97706;
+  --color-accent-emerald: #047857;
+  --color-accent-cyan: #0e7490;
+
+  /* ---------- Semantic ---------- */
+  --color-success:       #16a34a;
+  --color-success-bg:    #dcfce7;
+  --color-success-fg:    #166534;
+
+  --color-warning:       #f59e0b;
+  --color-warning-bg:    #fef3c7;
+  --color-warning-fg:    #92400e;
+
+  --color-danger:        #dc2626;
+  --color-danger-bg:     #fee2e2;
+  --color-danger-fg:     #991b1b;
+
+  --color-info:          #0891b2;
+  --color-info-bg:       #cffafe;
+  --color-info-fg:       #155e75;
+
+  /* ---------- Surfaces ---------- */
+  --color-surface:       #ffffff;
+  --color-bg:            var(--color-neutral-50);
+  --color-bg-muted:      var(--color-neutral-100);
+  --color-sidebar:       var(--color-neutral-900);
+
+  /* ---------- Typography ---------- */
+  /*
+   * Primary: "思源黑体/Noto Sans SC" for Chinese precision
+   * Display: "Playfair Display" for editorial headlines(A Latin serif that elevates brand)
+   * Mono:    "JetBrains Mono" for technical content
+   */
+  --font-sans: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-serif: "Playfair Display", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+  --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+
+  --fs-xs:  12px;
+  --fs-sm:  13px;
+  --fs-base: 15px;
+  --fs-md:  16px;
+  --fs-lg:  18px;
+  --fs-xl:  20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 30px;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  --lh-body: 1.65;
+  --lh-tight: 1.2;
+  --lh-display: 1.1;
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+
+  /* ---------- Spacing ---------- */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* ---------- Radius ---------- */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-full: 999px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+
+  /* ---------- Layout ---------- */
+  --sidebar-w:          240px;
+  --sidebar-w-collapsed: 64px;
+  --header-h:           56px;
+  --content-max-w:      1440px;
+  --card-padding:       var(--sp-5);
+
+  /* ---------- Motion ---------- */
+  --ease:    cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-1:   100ms;
+  --dur-2:   150ms;
+  --dur-3:   200ms;
+  --dur-4:   300ms;
+
+  /* ---------- Component-specific ---------- */
+  --input-h:        36px;
+  --btn-h-sm:       32px;
+  --btn-h-md:       36px;
+  --btn-h-lg:       40px;
+  --table-row-h-sm: 40px;
+  --table-row-h:    48px;
+  --table-row-h-lg: 56px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+    --dur-3: 0ms;
+    --dur-4: 0ms;
+  }
+}

@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.insurance.ruleengine.grpc";
+
+service RuleEngineExternal {
+  // 核心: 执行已发布的规则
+  rpc ExecuteRule (ExecuteRuleRequest) returns (ExecuteRuleResponse);
+  // 测试规则版本
+  rpc TestRule (TestRuleRequest) returns (TestRuleResponse);
+  // 查询规则列表
+  rpc ListRules (ListRulesRequest) returns (ListRulesResponse);
+  // 查询规则详情
+  rpc GetRule (GetRuleRequest) returns (GetRuleResponse);
+  // 查询规则版本
+  rpc ListVersions (ListVersionsRequest) returns (ListVersionsResponse);
+}
+
+message ExecuteRuleRequest {
+  string trace_id = 1;
+  string rule_code = 2;
+  int32 version = 3;
+  string scenario = 4;
+  string facts_json = 5;
+  string operator = 6;
+}
+
+message ExecuteRuleResponse {
+  string trace_id = 1;
+  string rule_code = 2;
+  int32 version = 3;
+  string decision = 4;
+  repeated string hit_rules = 5;
+  string outputs_json = 6;
+  int64 elapsed_ms = 7;
+  string error = 8;
+}
+
+message TestRuleRequest {
+  string trace_id = 1;
+  string rule_code = 2;
+  int32 version = 3;
+  string scenario = 4;
+  string facts_json = 5;
+  string operator = 6;
+}
+
+message TestRuleResponse {
+  string trace_id = 1;
+  string rule_code = 2;
+  int32 version = 3;
+  string decision = 4;
+  repeated string hit_rules = 5;
+  string outputs_json = 6;
+  int64 elapsed_ms = 7;
+  string error = 8;
+}
+
+message ListRulesRequest {
+  string category = 1;
+  string business_line = 2;
+  string keyword = 3;
+}
+
+message RuleInfo {
+  string rule_code = 1;
+  string rule_name = 2;
+  string category = 3;
+  string business_line = 4;
+  int32 current_version = 5;
+  string status = 6;
+  string owner = 7;
+}
+
+message ListRulesResponse {
+  repeated RuleInfo rules = 1;
+  int32 total = 2;
+}
+
+message GetRuleRequest {
+  string rule_code = 1;
+}
+
+message GetRuleResponse {
+  string rule_code = 1;
+  string rule_name = 2;
+  string category = 3;
+  string business_line = 4;
+  string description = 5;
+  int32 current_version = 6;
+  string status = 7;
+  string owner = 8;
+  bool sensitive = 9;
+}
+
+message ListVersionsRequest {
+  string rule_code = 1;
+}
+
+message VersionInfo {
+  int32 version = 1;
+  string status = 2;
+  string created_by = 3;
+  string published_at = 4;
+}
+
+message ListVersionsResponse {
+  string rule_code = 1;
+  repeated VersionInfo versions = 2;
+}

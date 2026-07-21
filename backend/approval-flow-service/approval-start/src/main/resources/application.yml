@@ -1,0 +1,44 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /approval
+
+spring:
+  application:
+    name: approval-flow-service
+  datasource:
+    url: ${MYSQL_URL:ENC(B36CvdDaY28JXxYsG8R2I+AnEQ1etkta8vWec0knNxfVF5S3p9LLU6gDlpTFyEXPStXSOQBCJKQmsL/5o6NEBI6u0ek/LihaAvvtabkbsQ7Cr/0TgiQzKCy3IYfgjy1NZjKvgrOBfiewPOpXX7HemFkwGQwjrQVl+P2hHnVXj1bHDnpI60qkXghOVgOO0hK60FChFsHf84+v29M8NzO3tfTAubtNyNta)}
+    username: ${MYSQL_USER:ENC(1LHxXPcEkqlKu+CAEHfYwwwHnYs34RLE)}
+    password: ${MYSQL_PASSWORD:ENC(XMqk4InL9cw/0if28U3q+pdYQ9k1U1UEn1/i2sDhODs=)}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    table: flyway_approval_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
+
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD}
+    algorithm: PBEWithMD5AndDES
+    iv-generator-classname: org.jasypt.iv.NoIvGenerator
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+approval-flow:
+  callback:
+    rule-engine-url: ${RULE_ENGINE_URL:http://localhost:8080/rule-engine}
+    max-retries: 3
+    secret: ${APPROVAL_CALLBACK_SECRET:}

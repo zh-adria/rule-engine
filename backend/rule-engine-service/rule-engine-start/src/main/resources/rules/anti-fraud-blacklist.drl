@@ -1,0 +1,44 @@
+package insurance.risk
+
+import java.util.Map;
+import com.insurance.ruleengine.domain.model.ExecutionResult;
+import com.insurance.ruleengine.domain.model.DecisionType;
+
+rule "FRAUD_001 blacklist hit"
+salience 100
+when
+  $facts: Map(this["blacklisted"] == true)
+  $result: ExecutionResult()
+then
+  $result.setDecision(DecisionType.BLACKLIST_HIT);
+  $result.getHitRules().add("FRAUD_001");
+  $result.getOutputs().put("riskLevel", "REJECT");
+  $result.getOutputs().put("riskReason", "投保人命中公司黑名单");
+end
+
+rule "FRAUD_002 device multi policy manual review"
+salience 80
+when
+  $facts: Map(this["devicePolicyCount24h"] != null,
+              ((Number)this["devicePolicyCount24h"]).intValue() >= 5)
+  $result: ExecutionResult(decision != DecisionType.BLACKLIST_HIT)
+then
+  $result.setDecision(DecisionType.MANUAL_REVIEW);
+  $result.getHitRules().add("FRAUD_002");
+  $result.getOutputs().put("riskLevel", "HIGH");
+  $result.getOutputs().put("riskReason", "同设备24小时内多次投保");
+end
+
+rule "FRAUD_003 abnormal claim history"
+salience 60
+when
+  $facts: Map(this["claimCount12m"] != null,
+              ((Number)this["claimCount12m"]).intValue() >= 3)
+  $result: ExecutionResult(decision == DecisionType.ACCEPT)
+then
+  $result.setDecision(DecisionType.MANUAL_REVIEW);
+  $result.getHitRules().add("FRAUD_003");
+  $result.getOutputs().put("riskLevel", "MEDIUM");
+  $result.getOutputs().put("riskReason", "近12个月理赔频次异常");
+end
+

@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'rule-engine-service'
+    metrics_path: '/rule-engine/actuator/prometheus'
+    static_configs:
+      - targets: ['rule-engine-service:8080']
+        labels:
+          application: 'rule-engine-service'
+
+  - job_name: 'approval-flow-service'
+    metrics_path: '/approval/actuator/prometheus'
+    static_configs:
+      - targets: ['approval-flow-service:8082']
+        labels:
+          application: 'approval-flow-service'
+
+  - job_name: 'gateway-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['gateway-service:9000']
+        labels:
+          application: 'gateway-service'

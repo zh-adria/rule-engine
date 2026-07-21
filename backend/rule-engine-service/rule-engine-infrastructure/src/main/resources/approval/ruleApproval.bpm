@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<bpm code="approval.ruleApproval" name="rule approval" type="process" description="Rule version approval workflow">
+  <var name="currentStatus" dataType="java.lang.String" inOutType="param"/>
+  <var name="action" dataType="java.lang.String" inOutType="param"/>
+  <var name="approvalStatus" dataType="java.lang.String" inOutType="return"/>
+  <start id="start" name="start" g="20,20,30,30">
+    <transition to="transition"/>
+  </start>
+  <autoTask id="transition" name="transition approval status" g="90,10,160,50">
+    <transition to="end"/>
+    <action type="java">
+      <actionHandle clazz="com.insurance.ruleengine.infrastructure.approval.RuleApprovalFlowActions" method="nextStatus">
+        <var name="currentStatus" dataType="java.lang.String" contextVarName="currentStatus" inOutType="param"/>
+        <var name="action" dataType="java.lang.String" contextVarName="action" inOutType="param"/>
+        <var name="approvalStatus" dataType="java.lang.String" contextVarName="approvalStatus" inOutType="return"/>
+      </actionHandle>
+    </action>
+  </autoTask>
+  <end id="end" name="end" g="290,20,30,30"/>
+</bpm>

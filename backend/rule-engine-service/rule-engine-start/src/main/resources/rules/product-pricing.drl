@@ -1,0 +1,47 @@
+package insurance.pricing
+
+import java.util.Map;
+import com.insurance.ruleengine.domain.model.ExecutionResult;
+import com.insurance.ruleengine.domain.model.DecisionType;
+
+rule "PRICE_001 critical illness base premium"
+salience 100
+when
+  $facts: Map(this["productCode"] == "CI2026",
+              this["age"] != null,
+              this["sumInsured"] != null)
+  $result: ExecutionResult()
+then
+  int age = ((Number)$facts.get("age")).intValue();
+  double sumInsured = ((Number)$facts.get("sumInsured")).doubleValue();
+  double baseRate = age < 30 ? 0.0032 : (age < 45 ? 0.0068 : 0.0125);
+  $result.setDecision(DecisionType.PRICE_ADJUST);
+  $result.getHitRules().add("PRICE_001");
+  $result.getOutputs().put("basePremium", sumInsured * baseRate);
+end
+
+rule "PRICE_002 smoker surcharge"
+salience 80
+when
+  $facts: Map(this["smoker"] == true)
+  $result: ExecutionResult(outputs["basePremium"] != null)
+then
+  double basePremium = ((Number)$result.getOutputs().get("basePremium")).doubleValue();
+  $result.getHitRules().add("PRICE_002");
+  $result.getOutputs().put("finalPremium", basePremium * 1.2);
+  $result.getOutputs().put("pricingReason", "吸烟人群费率上浮20%");
+end
+
+rule "PRICE_003 agent commission"
+salience 50
+when
+  $facts: Map(this["channel"] == "AGENT")
+  $result: ExecutionResult(outputs["basePremium"] != null)
+then
+  double premium = $result.getOutputs().get("finalPremium") == null
+      ? ((Number)$result.getOutputs().get("basePremium")).doubleValue()
+      : ((Number)$result.getOutputs().get("finalPremium")).doubleValue();
+  $result.getHitRules().add("PRICE_003");
+  $result.getOutputs().put("commission", premium * 0.18);
+end
+

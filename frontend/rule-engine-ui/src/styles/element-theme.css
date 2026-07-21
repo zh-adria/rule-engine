@@ -1,0 +1,120 @@
+/* ============================================================
+ * Element Plus 主题覆盖
+ * 必须在 `element-plus/dist/index.css` 之后、token.css 之前引入
+ * (实际顺序以 main.js 中的 import 为准)
+ * ============================================================ */
+
+:root,
+html.dark {
+  /* ---------- Brand ---------- */
+  --el-color-primary: var(--color-primary-600);
+  --el-color-primary-light-3: var(--color-primary-400);
+  --el-color-primary-light-5: var(--color-primary-300);
+  --el-color-primary-light-7: var(--color-primary-200);
+  --el-color-primary-light-8: var(--color-primary-100);
+  --el-color-primary-light-9: var(--color-primary-50);
+  --el-color-primary-dark-2: var(--color-primary-700);
+
+  --el-color-success: var(--color-success);
+  --el-color-warning: var(--color-warning);
+  --el-color-danger: var(--color-danger);
+  --el-color-error: var(--color-danger);
+  --el-color-info: var(--color-neutral-400);
+
+  --el-color-success-light-9: var(--color-success-bg);
+  --el-color-warning-light-9: var(--color-warning-bg);
+  --el-color-danger-light-9: var(--color-danger-bg);
+
+  /* ---------- Background / Text ---------- */
+  --el-bg-color: var(--color-surface);
+  --el-bg-color-page: var(--color-bg);
+  --el-bg-color-overlay: var(--color-surface);
+
+  --el-text-color-primary: var(--color-neutral-900);
+  --el-text-color-regular: var(--color-neutral-700);
+  --el-text-color-secondary: var(--color-neutral-500);
+  --el-text-color-placeholder: var(--color-neutral-400);
+  --el-text-color-disabled: var(--color-neutral-400);
+
+  --el-border-color: var(--color-neutral-200);
+  --el-border-color-light: var(--color-neutral-100);
+  --el-border-color-lighter: var(--color-neutral-100);
+  --el-border-color-extra-light: var(--color-neutral-50);
+
+  --el-fill-color: var(--color-neutral-100);
+  --el-fill-color-light: var(--color-neutral-50);
+  --el-fill-color-blank: var(--color-surface);
+
+  --el-box-shadow: var(--shadow-sm);
+  --el-box-shadow-light: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --el-box-shadow-lighter: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  /* ---------- Radius ---------- */
+  --el-border-radius-base: var(--radius-md, 4px);
+  --el-border-radius-small: var(--radius-sm, 4px);
+  --el-border-radius-round: var(--radius-lg, 4px);
+
+  /* ---------- Typography ---------- */
+  --el-font-size-base: var(--fs-base, 14px);
+  --el-font-size-small: var(--fs-sm, 12px);
+  --el-font-size-large: var(--fs-md, 16px);
+
+  /* ---------- Disable base ---------- */
+  --el-disabled-bg-color: var(--color-neutral-50);
+  --el-disabled-text-color: var(--color-neutral-400);
+  --el-disabled-border-color: var(--color-neutral-200);
+}
+
+/* Element Plus 在组件上直接 style 注入颜色的场景,
+   用 !important 兜底,避免 light-X 调色板不生效。 */
+.el-button--primary {
+  --el-button-hover-bg-color: var(--color-primary-700) !important;
+  --el-button-hover-border-color: var(--color-primary-700) !important;
+  --el-button-active-bg-color: var(--color-primary-800) !important;
+  --el-button-active-border-color: var(--color-primary-800) !important;
+}
+.el-button--success {
+  --el-button-hover-bg-color: #15803d !important;
+  --el-button-hover-border-color: #15803d !important;
+}
+.el-button--danger {
+  --el-button-hover-bg-color: #b91c1c !important;
+  --el-button-hover-border-color: #b91c1c !important;
+}
+
+/* Sidebar 侧边栏视觉融合(让 el-menu 使用我们的 token) */
+.el-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: rgba(79, 70, 229, 0.12);
+  --el-menu-active-color: var(--color-primary-400);
+  --el-menu-text-color: var(--color-neutral-400);
+  --el-menu-hover-text-color: #fff;
+  --el-menu-item-height: 40px;
+  --el-menu-item-font-size: var(--fs-sm);
+  --el-menu-border-color: transparent;
+}
+
+.el-table {
+  --el-table-header-bg-color: var(--color-neutral-50);
+  --el-table-header-text-color: var(--color-neutral-700);
+  --el-table-row-hover-bg-color: var(--color-neutral-50);
+  --el-table-border-color: var(--color-neutral-200);
+  --el-table-tr-bg-color: var(--color-surface);
+}
+
+.el-card {
+  --el-card-bg-color: var(--color-surface);
+  --el-card-border-color: var(--color-neutral-200);
+  --el-card-border-radius: var(--radius-lg);
+}
+
+.el-input__wrapper {
+  --el-input-bg-color: var(--color-surface);
+  --el-input-border-color: var(--color-neutral-300);
+  --el-input-hover-border-color: var(--color-neutral-400);
+  --el-input-focus-border-color: var(--color-primary-600);
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18) !important;
+}

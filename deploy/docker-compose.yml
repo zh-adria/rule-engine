@@ -1,0 +1,161 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: rule-engine-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: rule-engine-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+
+  approval-flow-service:
+    build:
+      context: ../backend/approval-flow-service
+      dockerfile: Dockerfile
+    container_name: approval-flow-service
+    environment:
+      MYSQL_URL: ENC(B36CvdDaY28JXxYsG8R2I+AnEQ1etkta8vWec0knNxfVF5S3p9LLU6gDlpTFyEXPStXSOQBCJKQmsL/5o6NEBI6u0ek/LihaAvvtabkbsQ7Cr/0TgiQzKCy3IYfgjy1NZjKvgrOBfiewPOpXX7HemFkwGQwjrQVl+P2hHnVXj1bHDnpI60qkXghOVgOO0hK60FChFsHf84+v29M8NzO3tfTAubtNyNta)
+      MYSQL_USER: ENC(1LHxXPcEkqlKu+CAEHfYwwwHnYs34RLE)
+      MYSQL_PASSWORD: ENC(XMqk4InL9cw/0if28U3q+pdYQ9k1U1UEn1/i2sDhODs=)
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD:?请设置 JASYPT_ENCRYPTOR_PASSWORD}
+      RULE_ENGINE_URL: http://rule-engine-service:8080/rule-engine
+      APPROVAL_CALLBACK_SECRET: ${APPROVAL_CALLBACK_SECRET:-rule-engine-local-callback-secret}
+    ports:
+      - "8082:8082"
+    depends_on:
+      rule-engine-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/approval/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  rule-engine-service:
+    build:
+      context: ..
+      dockerfile: backend/rule-engine-service/rule-engine-start/Dockerfile
+    container_name: rule-engine-service
+    environment:
+      MYSQL_URL: ENC(B36CvdDaY28JXxYsG8R2I+AnEQ1etkta8vWec0knNxfVF5S3p9LLU6gDlpTFyEXPStXSOQBCJKQmsL/5o6NEBI6u0ek/LihaAvvtabkbsQ7Cr/0TgiQzKCy3IYfgjy1NZjKvgrOBfiewPOpXX7HemFkwGQwjrQVl+P2hHnVXj1bHDnpI60qkXghOVgOO0hK60FChFsHf84+v29M8NzO3tfTAubtNyNta)
+      MYSQL_USER: ENC(1LHxXPcEkqlKu+CAEHfYwwwHnYs34RLE)
+      MYSQL_PASSWORD: ENC(XMqk4InL9cw/0if28U3q+pdYQ9k1U1UEn1/i2sDhODs=)
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD:?请设置 JASYPT_ENCRYPTOR_PASSWORD}
+      REDIS_HOST: redis
+      NACOS_ENABLED: "true"
+      NACOS_SERVER: nacos:8848
+      RULE_ENGINE_AES_KEY: rule-engine-local-key-2026!!secure-key-32
+      SA_TOKEN_JWT_SECRET_KEY: ${SA_TOKEN_JWT_SECRET_KEY:-rule-engine-sa-token-jwt-secret-2026}
+      RULE_ENGINE_ADMIN_USERNAME: ${RULE_ENGINE_ADMIN_USERNAME:-admin}
+      RULE_ENGINE_ADMIN_PASSWORD: ${RULE_ENGINE_ADMIN_PASSWORD:-admin123}
+      RULE_ENGINE_TESTER_USERNAME: ${RULE_ENGINE_TESTER_USERNAME:-underwriter}
+      RULE_ENGINE_TESTER_PASSWORD: ${RULE_ENGINE_TESTER_PASSWORD:-underwriter123}
+      APPROVAL_FLOW_URL: http://approval-flow-service:8082/approval
+      APPROVAL_CALLBACK_SECRET: ${APPROVAL_CALLBACK_SECRET:-rule-engine-local-callback-secret}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      EXPOSE_ACTUATOR: "true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/rule-engine/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  gateway-service:
+    build:
+      context: ../backend/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    environment:
+      APPROVAL_SERVICE_URI: http://approval-flow-service:8082
+      RULE_ENGINE_SERVICE_URI: http://rule-engine-service:8080
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      NACOS_ENABLED: "false"
+      SA_TOKEN_JWT_SECRET_KEY: ${SA_TOKEN_JWT_SECRET_KEY:-rule-engine-sa-token-jwt-secret-2026}
+    ports:
+      - "9000:9000"
+    depends_on:
+      - approval-flow-service
+      - rule-engine-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  rule-engine-ui:
+    build:
+      context: ..
+      dockerfile: frontend/rule-engine-ui/Dockerfile
+    container_name: rule-engine-ui
+    ports:
+      - "5173:80"
+    depends_on:
+      gateway-service:
+        condition: service_healthy
+
+  # ==================== 监控服务 ====================
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: rule-engine-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - rule-engine-service
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: rule-engine-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  prometheus-data:
+  grafana-data:
